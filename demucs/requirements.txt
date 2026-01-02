@@ -1,0 +1,6 @@
+demucs>=4.0.0,<5.0.0
+litserve>=0.0.1,<1.0.0
+requests>=2.30.0,<3.0.0
+accelerate<=1.1.0
+transformers==4.37.2
+pillow<12,>=7.1.0

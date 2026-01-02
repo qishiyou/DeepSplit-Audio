@@ -1,0 +1,107 @@
+import { useCallback, useMemo } from "react";
+import {
+  AudioLinesIcon,
+  CheckIcon,
+  CircleAlertIcon,
+  ClockIcon,
+  DrumIcon,
+  GuitarIcon,
+  MicVocalIcon,
+  Trash2Icon,
+} from "lucide-react";
+
+import type { ResultType } from "~/db/schema";
+import DeleteItem from "~/components/delete-item";
+import { labelVariants } from "~/components/ui/label";
+import { Spinner } from "~/components/ui/spinner";
+import { useResult } from "~/hooks/use-result";
+import ResultLink from "./result-link";
+import { useI18n } from "~/i18n/use-i18n";
+
+interface ResultItemProps {
+  initialData: ResultType;
+}
+
+export default function ResultItem({ initialData }: ResultItemProps) {
+  const { t } = useI18n();
+  const { id, name, status, twoStems, expiresAt } = useResult(initialData);
+
+  const timeUntilExpiration = useMemo(() => {
+    const expires = typeof expiresAt === "object" ? expiresAt.getTime() : new Date(expiresAt).getTime();
+    const now = Date.now();
+    const diff = expires - now;
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) {
+      return `${days} ${days > 1 ? t('days') : t('day')}`;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
+    if (hours > 0) {
+      return `${hours} ${hours > 1 ? t('hours') : t('hour')}`;
+    }
+
+    const minutes = Math.floor(diff / (1000 * 60)) % 60;
+    if (minutes > 0) {
+      return `${minutes} ${minutes > 1 ? t('minutes') : t('minute')}`;
+    }
+
+    return t('lessThanAMinute');
+  }, [expiresAt, t]);
+
+  const goToResult = useCallback(() => {
+    if (window.innerWidth < 640) {
+      window.location.href = `/result/${id}`;
+    }
+  }, [id]);
+
+  return (
+    <div
+      className="group flex w-full items-center justify-between border-x border-t p-4 transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b"
+      onClick={goToResult}
+    >
+      <div className="flex items-center space-x-3">
+        <div className="flex h-9 w-9 items-center justify-center">
+          <AudioLinesIcon size={24} />
+        </div>
+        <div className="space-y-1.5">
+          <p className={labelVariants()}>{name}</p>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <div className="flex items-center gap-1 text-[0.8rem]">
+              <ClockIcon className="h-[0.8rem] w-[0.8rem]" />
+              {timeUntilExpiration}
+            </div>
+            <div className="flex gap-1 *:h-[0.8rem] *:w-[0.8rem]">
+              {twoStems ? (
+                <>
+                  <MicVocalIcon /> <AudioLinesIcon />
+                </>
+              ) : (
+                <>
+                  <MicVocalIcon /> <DrumIcon /> <GuitarIcon />
+                  <AudioLinesIcon />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex h-9 w-9 items-center justify-center sm:group-hover:hidden">
+        {status === "success" ? (
+          <CheckIcon size={16} />
+        ) : status === "processing" ? (
+          <Spinner size={16} />
+        ) : (
+          <CircleAlertIcon size={16} />
+        )}
+      </div>
+      <div className="hidden space-x-1 sm:group-hover:flex">
+        <DeleteItem id={id} name={name} withTooltip size="icon" variant="ghost">
+          <Trash2Icon size={16} />
+          <span className="sr-only">Delete</span>
+        </DeleteItem>
+        <ResultLink href={`/result/${id}`} />
+      </div>
+    </div>
+  );
+}
